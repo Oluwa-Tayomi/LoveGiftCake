@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin — LoveGiftCake</title>
+  <link rel="stylesheet" href="./tokens.css" />
+  <style>
+    body { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); margin: 0; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: var(--space-4); }
+    .card { background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-card); padding: var(--space-4); margin-top: var(--space-4); }
+    .muted { color: var(--color-muted); font-size: var(--text-sm); }
+    .btn { background: var(--color-primary); color: #fff; border: 0; border-radius: var(--radius-md); padding: 8px 14px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Admin</h1>
+    <p class="muted">Approve vendors. Watch orders. Free Supabase backend — no paid dashboard needed.</p>
+    <div class="card"><h3>Pending vendors</h3><div id="vendors">Loading…</div></div>
+    <div class="card"><h3>Recent orders</h3><div id="orders">Loading…</div></div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js" onerror="console.log('demo')"></script>
+  <script>
+    async function main() {
+      const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
+      if (!url || !key || url.includes("PASTE")) {
+        document.getElementById("vendors").textContent = "Demo — connect config.js.";
+        document.getElementById("orders").textContent = "Demo — connect config.js.";
+        return;
+      }
+      const db = supabase.createClient(url, key);
+      const v = await db.from("vendors").select("id,business_name,city").eq("verification_status", "pending").limit(20);
+      document.getElementById("vendors").innerHTML = (v.data && v.data.length)
+        ? v.data.map(x => '<p>' + x.business_name + ' (' + x.city + ') <button class="btn" onclick="approve(\'' + x.id + '\')">Approve</button></p>').join("")
+        : "No pending vendors.";
+      const o = await db.from("orders").select("id,status,total,currency,created_at").order("created_at", { ascending: false }).limit(20);
+      document.getElementById("orders").innerHTML = (o.data && o.data.length)
+        ? o.data.map(x => '<p>' + x.id.slice(0, 8) + ' — ' + x.status + ' — ' + x.total + ' ' + x.currency + '</p>').join("")
+        : "No orders yet.";
+    }
+    async function approve(id) {
+      const db = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+      await db.from("vendors").update({ verification_status: "approved" }).eq("id", id);
+      location.reload();
+    }
+    main();
+  </script>
+</body>
+</html>
