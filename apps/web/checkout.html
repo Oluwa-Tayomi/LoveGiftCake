@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Checkout — LoveGiftCake</title>
+  <link rel="stylesheet" href="./tokens.css" />
+  <style>
+    body { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); margin: 0; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: var(--space-4); }
+    .card { background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-card); padding: var(--space-4); margin-top: var(--space-4); }
+    .muted { color: var(--color-muted); font-size: var(--text-sm); }
+    label { display: block; margin-top: var(--space-3); font-size: var(--text-sm); }
+    input, select, textarea { width: 100%; padding: 10px; border-radius: var(--radius-sm); border: 1px solid #e5d9cf; font-size: var(--text-base); }
+    .btn { background: var(--color-primary); color: #fff; border: 0; border-radius: var(--radius-md); padding: 12px 18px; font-size: var(--text-base); margin-top: var(--space-4); width: 100%; }
+    .row { display: flex; justify-content: space-between; padding: 4px 0; }
+    .total { font-weight: 700; font-size: var(--text-lg); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Checkout</h1>
+    <p class="muted">Transparent pricing: cake + delivery + platform fee. No hidden charges.</p>
+    <div class="card">
+      <label>Cake
+        <select id="cake">
+          <option value="18000|NGN|Chocolate Birthday Cake">Chocolate Birthday Cake — NGN 18,000</option>
+          <option value="22000|NGN|Vanilla Anniversary Cake">Vanilla Anniversary Cake — NGN 22,000</option>
+        </select>
+      </label>
+      <label>Quantity <input id="qty" type="number" min="1" value="1" /></label>
+      <label>Fulfillment
+        <select id="method">
+          <option value="vendor_delivery">Vendor delivery</option>
+          <option value="pickup">Pickup</option>
+          <option value="own_rider">My own rider</option>
+        </select>
+      </label>
+      <label>Recipient name <input id="rname" placeholder="e.g. Ada in Jos" /></label>
+      <label>Recipient address <input id="raddr" placeholder="Street, area, Jos" /></label>
+      <label>Recipient phone <input id="rphone" placeholder="+234…" /></label>
+      <label>Gift message <textarea id="gift" rows="2" placeholder="Happy birthday!"></textarea></label>
+      <label><input id="hide" type="checkbox" style="width:auto" /> Keep my identity hidden (surprise)</label>
+      <label>Delivery date <input id="date" type="date" /></label>
+    </div>
+    <div class="card">
+      <div class="row"><span>Subtotal</span><span id="sub">…</span></div>
+      <div class="row"><span>Delivery fee</span><span id="del">…</span></div>
+      <div class="row"><span>Platform fee</span><span id="fee">…</span></div>
+      <div class="row total"><span>Total</span><span id="tot">…</span></div>
+      <p class="muted" id="status">Demo total — connect config.js + Supabase to place real orders.</p>
+      <button class="btn" onclick="placeOrder()">Pay (test mode)</button>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js" onerror="console.log('demo mode')"></script>
+  <script>
+    const fmt = (n, c) => { try { return new Intl.NumberFormat(undefined, { style: "currency", currency: c }).format(n); } catch { return n + " " + c; } };
+    function calc() {
+      const parts = document.getElementById("cake").value.split("|");
+      const price = +parts[0], curr = parts[1];
+      const qty = Math.max(1, +document.getElementById("qty").value || 1);
+      const method = document.getElementById("method").value;
+      const sub = price * qty;
+      const del = method === "pickup" ? 0 : 2000;
+      const fee = Math.round(sub * 0.05);
+      document.getElementById("sub").textContent = fmt(sub, curr);
+      document.getElementById("del").textContent = fmt(del, curr);
+      document.getElementById("fee").textContent = fmt(fee, curr);
+      document.getElementById("tot").textContent = fmt(sub + del + fee, curr);
+      return { sub, del, fee, total: sub + del + fee, curr };
+    }
+    document.querySelectorAll("select,input").forEach(el => el.addEventListener("input", calc)); calc();
+    async function placeOrder() {
+      const t = calc();
+      const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
+      if (!url || !key || url.includes("PASTE")) { document.getElementById("status").textContent = "Demo only — add config.js to place a real test order."; return; }
+      document.getElementById("status").textContent = "Placing test order…";
+      try {
+        const db = supabase.createClient(url, key);
+        const res = await db.from("vendors").select("id").eq("verification_status", "approved").limit(1).single();
+        if (!res.data) throw new Error("No approved vendor yet — add one in Supabase first.");
+        const ins = await db.from("orders").insert({
+          vendor_id: res.data.id, order_type: "standard", status: "placed",
+          subtotal: t.sub, delivery_fee: t.del, platform_fee: t.fee, total: t.total,
+          currency: t.curr, scheduled_date: document.getElementById("date").value || null
+        }).select("id").single();
+        if (ins.error) throw ins.error;
+        await db.from("recipients").insert({
+          order_id: ins.data.id, name: document.getElementById("rname").value || "Recipient",
+          address: document.getElementById("raddr").value || "", phone: document.getElementById("rphone").value || "",
+          gift_message: document.getElementById("gift").value || "", hide_sender: document.getElementById("hide").checked
+        });
+        await db.from("payments").insert({ order_id: ins.data.id, provider: "paystack_test", amount: t.total, currency: t.curr, status: "pending" });
+        document.getElementById("status").textContent = "Test order placed: " + ins.data.id + " (payment pending — wire Paystack test next).";
+      } catch (e) { document.getElementById("status").textContent = "Failed: " + e.message; }
+    }
+  </script>
+</body>
+</html>
