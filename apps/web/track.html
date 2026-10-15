@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Track order — LoveGiftCake</title>
+  <link rel="stylesheet" href="./tokens.css" />
+  <style>
+    body { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); margin: 0; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: var(--space-4); }
+    .card { background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-card); padding: var(--space-4); margin-top: var(--space-4); }
+    .muted { color: var(--color-muted); font-size: var(--text-sm); }
+    input { width: 100%; padding: 10px; border-radius: var(--radius-sm); border: 1px solid #e5d9cf; }
+    .btn { background: var(--color-primary); color: #fff; border: 0; border-radius: var(--radius-md); padding: 12px 18px; margin-top: var(--space-3); width: 100%; }
+    .pill { display: inline-block; background: #fbeef1; border-radius: 999px; padding: 6px 12px; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Track your cake</h1>
+    <p class="muted">Paste the order ID from checkout.</p>
+    <div class="card">
+      <input id="oid" placeholder="order id" />
+      <button class="btn" onclick="track()">Check status</button>
+      <p id="out" class="muted">Status appears here.</p>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js" onerror="console.log('demo')"></script>
+  <script>
+    async function track() {
+      const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
+      const id = document.getElementById("oid").value.trim();
+      if (!url || !key || url.includes("PASTE")) { document.getElementById("out").textContent = "Demo — connect config.js first."; return; }
+      try {
+        const db = supabase.createClient(url, key);
+        const res = await db.from("orders").select("id,status,total,currency,scheduled_date").eq("id", id).single();
+        if (res.error) throw res.error;
+        document.getElementById("out").innerHTML = '<span class="pill">' + res.data.status + '</span> — ' + res.data.total + ' ' + res.data.currency;
+      } catch (e) { document.getElementById("out").textContent = "Not found: " + e.message; }
+    }
+  </script>
+</body>
+</html>

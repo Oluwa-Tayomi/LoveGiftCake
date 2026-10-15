@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Review — LoveGiftCake</title>
+  <link rel="stylesheet" href="./tokens.css" />
+  <style>
+    body { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); margin: 0; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: var(--space-4); }
+    .card { background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-card); padding: var(--space-4); margin-top: var(--space-4); }
+    .muted { color: var(--color-muted); font-size: var(--text-sm); }
+    input, textarea { width: 100%; padding: 10px; border-radius: var(--radius-sm); border: 1px solid #e5d9cf; margin-top: var(--space-2); }
+    .btn { background: var(--color-primary); color: #fff; border: 0; border-radius: var(--radius-md); padding: 12px 18px; margin-top: var(--space-4); width: 100%; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Rate your cake</h1>
+    <p class="muted">Only after delivery.</p>
+    <div class="card">
+      <label>Order ID <input id="oid" placeholder="delivered order id" /></label>
+      <label>Cake quality (1-5) <input id="q" type="number" min="1" max="5" value="5" /></label>
+      <label>Vendor service (1-5) <input id="s" type="number" min="1" max="5" value="5" /></label>
+      <label>Delivery (1-5) <input id="d" type="number" min="1" max="5" value="5" /></label>
+      <label>Comment <textarea id="c" rows="3"></textarea></label>
+      <button class="btn" onclick="send()">Submit review</button>
+      <p class="muted" id="out"></p>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js" onerror="console.log('demo')"></script>
+  <script>
+    async function send() {
+      const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
+      if (!url || !key || url.includes("PASTE")) { document.getElementById("out").textContent = "Demo — connect config.js first."; return; }
+      try {
+        const db = supabase.createClient(url, key);
+        const oid = document.getElementById("oid").value.trim();
+        const o = await db.from("orders").select("id,vendor_id,status").eq("id", oid).single();
+        if (o.error) throw new Error("Order not found.");
+        if (o.data.status !== "delivered") throw new Error("Reviews open after delivery only (now " + o.data.status + ").");
+        const r = await db.from("reviews").insert({
+          order_id: oid, vendor_id: o.data.vendor_id,
+          cake_rating: +document.getElementById("q").value,
+          vendor_rating: +document.getElementById("s").value,
+          delivery_rating: +document.getElementById("d").value,
+          comment: document.getElementById("c").value
+        });
+        if (r.error) throw r.error;
+        document.getElementById("out").textContent = "Thank you — review saved.";
+      } catch (e) { document.getElementById("out").textContent = "Failed: " + e.message; }
+    }
+  </script>
+</body>
+</html>
