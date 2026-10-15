@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vendor orders — LoveGiftCake</title>
+  <link rel="stylesheet" href="./tokens.css" />
+  <style>
+    body { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); margin: 0; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: var(--space-4); }
+    .card { background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-card); padding: var(--space-4); margin-top: var(--space-4); }
+    .muted { color: var(--color-muted); font-size: var(--text-sm); }
+    .btn { background: var(--color-primary); color: #fff; border: 0; border-radius: var(--radius-md); padding: 8px 12px; margin: 4px 4px 0 0; }
+    .btn2 { background: #eee; border: 0; border-radius: var(--radius-md); padding: 8px 12px; margin: 4px 4px 0 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Vendor orders</h1>
+    <p class="muted">Accept → preparing → ready → out for delivery → delivered.</p>
+    <div class="card"><div id="list">Loading…</div></div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js" onerror="console.log('demo')"></script>
+  <script>
+    const NEXT = { placed: "awaiting_vendor", awaiting_vendor: "accepted", accepted: "preparing", preparing: "ready", ready: "out_for_delivery", out_for_delivery: "delivered" };
+    async function main() {
+      const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
+      if (!url || !key || url.includes("PASTE")) { document.getElementById("list").textContent = "Demo — connect config.js to manage real orders."; return; }
+      const db = supabase.createClient(url, key);
+      const res = await db.from("orders").select("id,status,total,currency").order("created_at", { ascending: false }).limit(30);
+      if (res.error) { document.getElementById("list").textContent = "Failed: " + res.error.message; return; }
+      if (!res.data.length) { document.getElementById("list").textContent = "No orders yet."; return; }
+      document.getElementById("list").innerHTML = res.data.map(o =>
+        '<div class="card"><strong>' + o.id.slice(0, 8) + '</strong> — ' + o.status + ' — ' + o.total + ' ' + o.currency +
+        (NEXT[o.status] ? '<br/><button class="btn" onclick="setStatus(\'' + o.id + '\',\'' + NEXT[o.status] + '\')">Move to ' + NEXT[o.status] + '</button>' : '') +
+        ((o.status !== "delivered" && o.status !== "cancelled") ? '<button class="btn2" onclick="setStatus(\'' + o.id + '\',\'cancelled\')">Cancel</button>' : '') +
+        '</div>'
+      ).join("");
+    }
+    async function setStatus(id, status) {
+      const db = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+      const res = await db.from("orders").update({ status }).eq("id", id);
+      if (res.error) alert("Failed: " + res.error.message); else location.reload();
+    }
+    main();
+  </script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Required files exist
+        run: |
+          test -f cake_marketplace_prd.md
+          test -f IMPLEMENTATION_PLAN.md
+          test -f apps/web/tokens.css
+          test -f apps/web/index.html
+          test -f apps/web/vendors.html
+          test -f apps/web/cakes.html
+          test -f apps/web/checkout.html
+          test -f apps/web/custom.html
+          test -f apps/web/track.html
+          test -f apps/web/review.html
+          test -f apps/web/vendor.html
+          test -f apps/web/admin.html
+          test -f supabase/schema.sql
+          test -f supabase/rls.sql
+          test -f supabase/seed_demo.sql
+          echo "All free-tier files present."
