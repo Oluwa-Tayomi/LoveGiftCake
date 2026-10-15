@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Vendors — LoveGiftCake</title>
+  <link rel="stylesheet" href="./tokens.css" />
+  <style>
+    body { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); margin: 0; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: var(--space-4); }
+    .card { background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-card); padding: var(--space-4); margin-top: var(--space-4); }
+    .muted { color: var(--color-muted); font-size: var(--text-sm); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Verified bakers</h1>
+    <p class="muted" id="status">Loading…</p>
+    <div id="list"></div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js" onerror="console.log('no local config, using demo data')"></script>
+  <script>
+    const mock = [{ business_name: "Sunshine Bakery", city: "Jos", country: "Nigeria", verification_status: "approved" }];
+    async function main() {
+      const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
+      if (!url || !key || url.includes("PASTE")) {
+        document.getElementById("status").textContent = "Demo data — add config.js to see live vendors.";
+        render(mock); return;
+      }
+      try {
+        const db = supabase.createClient(url, key);
+        const { data, error } = await db.from("vendors").select("business_name,city,country,verification_status").eq("verification_status", "approved").limit(20);
+        if (error) throw error;
+        document.getElementById("status").textContent = data.length + " verified baker(s).";
+        render(data.length ? data : mock);
+      } catch (e) {
+        document.getElementById("status").textContent = "Could not reach database — showing demo.";
+        render(mock);
+      }
+    }
+    function render(rows) {
+      document.getElementById("list").innerHTML = rows.map(v =>
+        '<div class="card"><strong>' + v.business_name + '</strong><p class="muted">' + v.city + ', ' + v.country + ' • ' + v.verification_status + '</p></div>'
+      ).join("");
+    }
+    main();
+  </script>
+</body>
+</html>
