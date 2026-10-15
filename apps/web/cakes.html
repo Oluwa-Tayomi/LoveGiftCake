@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cakes — LoveGiftCake</title>
+  <link rel="stylesheet" href="./tokens.css" />
+  <style>
+    body { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); margin: 0; }
+    .wrap { max-width: 720px; margin: 0 auto; padding: var(--space-4); }
+    .card { background: var(--color-surface); border-radius: var(--radius-md); box-shadow: var(--shadow-card); padding: var(--space-4); margin-top: var(--space-4); }
+    .muted { color: var(--color-muted); font-size: var(--text-sm); }
+    .price { font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Cakes</h1>
+    <p class="muted" id="status">Loading…</p>
+    <div id="list"></div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js" onerror="console.log('no local config, using demo data')"></script>
+  <script>
+    const mock = [
+      { name: "Chocolate Birthday Cake", base_price: 18000, currency: "NGN", prep_hours: 48 },
+      { name: "Vanilla Anniversary Cake", base_price: 22000, currency: "NGN", prep_hours: 72 }
+    ];
+    async function main() {
+      const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
+      if (!url || !key || url.includes("PASTE")) {
+        document.getElementById("status").textContent = "Demo cakes — add config.js to see live catalogue.";
+        render(mock); return;
+      }
+      try {
+        const db = supabase.createClient(url, key);
+        const { data, error } = await db.from("products").select("name,base_price,currency,prep_hours").eq("status", "active").limit(20);
+        if (error) throw error;
+        document.getElementById("status").textContent = data.length + " cake(s).";
+        render(data.length ? data : mock);
+      } catch (e) {
+        document.getElementById("status").textContent = "Could not reach database — showing demo.";
+        render(mock);
+      }
+    }
+    function render(rows) {
+      const fmt = (n, c) => { try { return new Intl.NumberFormat(undefined, { style: "currency", currency: c || "NGN" }).format(n); } catch { return n + " " + (c || ""); } };
+      document.getElementById("list").innerHTML = rows.map(p =>
+        '<div class="card"><strong>' + p.name + '</strong><p><span class="price">' + fmt(p.base_price, p.currency) + '</span> <span class="muted">• ready in ' + p.prep_hours + 'h</span></p></div>'
+      ).join("");
+    }
+    main();
+  </script>
+</body>
+</html>
