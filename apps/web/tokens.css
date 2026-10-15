@@ -1,0 +1,29 @@
+/* LoveGiftCake design tokens — Phase 0, free-first (plain CSS, no paid UI kit) */
+:root {
+  --color-primary: #c2415c;
+  --color-primary-dark: #9c2d44;
+  --color-accent: #f59e0b;
+  --color-bg: #fff9f5;
+  --color-surface: #ffffff;
+  --color-text: #2b2118;
+  --color-muted: #8a7a6d;
+  --color-success: #15803d;
+  --color-warning: #b45309;
+  --color-danger: #b91c1c;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --shadow-card: 0 2px 12px rgb(43 33 24 / 0.08);
+}
