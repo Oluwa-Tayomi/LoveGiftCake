@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Track order — LoveGiftCake</title>
   <link rel="stylesheet" href="./tokens.css" />
+  <link rel="stylesheet" href="./responsive.css" />
   <style>
     body { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); margin: 0; }
     .wrap { max-width: 720px; margin: 0 auto; padding: var(--space-4); }
@@ -18,7 +19,7 @@
 <body>
   <div class="wrap">
     <h1>Track your cake</h1>
-    <p class="muted">Paste the order ID from checkout.</p>
+    <p class="muted">Paste the order ID from checkout (e.g. after test order).</p>
     <div class="card">
       <input id="oid" placeholder="order id" />
       <button class="btn" onclick="track()">Check status</button>
@@ -34,11 +35,12 @@
       if (!url || !key || url.includes("PASTE")) { document.getElementById("out").textContent = "Demo — connect config.js first."; return; }
       try {
         const db = supabase.createClient(url, key);
-        const res = await db.from("orders").select("id,status,total,currency,scheduled_date").eq("id", id).single();
-        if (res.error) throw res.error;
-        document.getElementById("out").innerHTML = '<span class="pill">' + res.data.status + '</span> — ' + res.data.total + ' ' + res.data.currency;
+        const { data, error } = await db.from("orders").select("id,status,total,currency,scheduled_date").eq("id", id).single();
+        if (error) throw error;
+        document.getElementById("out").innerHTML = '<span class="pill">' + data.status + '</span> — ' + data.total + ' ' + data.currency + (data.scheduled_date ? ' — due ' + data.scheduled_date : '');
       } catch (e) { document.getElementById("out").textContent = "Not found: " + e.message; }
     }
   </script>
+<script src="./nav.js" defer></script>
 </body>
 </html>

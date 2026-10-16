@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Custom cake request — LoveGiftCake</title>
   <link rel="stylesheet" href="./tokens.css" />
+  <link rel="stylesheet" href="./responsive.css" />
   <style>
     body { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); margin: 0; }
     .wrap { max-width: 720px; margin: 0 auto; padding: var(--space-4); }
@@ -20,7 +21,7 @@
     <h1>Request a custom cake</h1>
     <p class="muted">Describe it — we send it to up to 5 suitable vendors. Free to request, pay only when you accept a quote.</p>
     <div class="card">
-      <label>Description <textarea id="desc" rows="4" placeholder="3-tier wedding cake, gold + white, serves 80…"></textarea></label>
+      <label>Description <textarea id="desc" rows="4" placeholder="3-tier wedding cake, gold + white, serves 80\u2026"></textarea></label>
       <label>Budget (NGN) <input id="budget" type="number" placeholder="e.g. 50000" /></label>
       <label>Needed on <input id="date" type="date" /></label>
       <label>City <input id="city" value="Jos" /></label>
@@ -36,16 +37,17 @@
       if (!url || !key || url.includes("PASTE")) { document.getElementById("status").textContent = "Demo only — add config.js first."; return; }
       try {
         const db = supabase.createClient(url, key);
-        const res = await db.from("custom_requests").insert({
+        const { data, error } = await db.from("custom_requests").insert({
           description: document.getElementById("desc").value,
           budget: +document.getElementById("budget").value || null,
           currency: "NGN", requested_date: document.getElementById("date").value || null,
           city: document.getElementById("city").value, country: "Nigeria", status: "open"
         }).select("id").single();
-        if (res.error) throw res.error;
-        document.getElementById("status").textContent = "Request sent: " + res.data.id + ". Vendors have 48h to quote.";
+        if (error) throw error;
+        document.getElementById("status").textContent = "Request sent: " + data.id + ". Vendors have 48h to quote.";
       } catch (e) { document.getElementById("status").textContent = "Failed: " + e.message; }
     }
   </script>
+<script src="./nav.js" defer></script>
 </body>
 </html>
