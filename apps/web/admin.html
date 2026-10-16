@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin — LoveGiftCake</title>
   <link rel="stylesheet" href="./tokens.css" />
+  <link rel="stylesheet" href="./responsive.css" />
   <style>
     body { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); margin: 0; }
     .wrap { max-width: 720px; margin: 0 auto; padding: var(--space-4); }
@@ -13,12 +14,12 @@
     .btn { background: var(--color-primary); color: #fff; border: 0; border-radius: var(--radius-md); padding: 8px 14px; }
   </style>
 </head>
-<body>
+<body data-require="admin">
   <div class="wrap">
     <h1>Admin</h1>
     <p class="muted">Approve vendors. Watch orders. Free Supabase backend — no paid dashboard needed.</p>
-    <div class="card"><h3>Pending vendors</h3><div id="vendors">Loading…</div></div>
-    <div class="card"><h3>Recent orders</h3><div id="orders">Loading…</div></div>
+    <div class="card"><h3>Pending vendors</h3><div id="vendors">Loading\u2026</div></div>
+    <div class="card"><h3>Recent orders</h3><div id="orders">Loading\u2026</div></div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./config.js" onerror="console.log('demo')"></script>
@@ -37,7 +38,7 @@
         : "No pending vendors.";
       const o = await db.from("orders").select("id,status,total,currency,created_at").order("created_at", { ascending: false }).limit(20);
       document.getElementById("orders").innerHTML = (o.data && o.data.length)
-        ? o.data.map(x => '<p>' + x.id.slice(0, 8) + ' — ' + x.status + ' — ' + x.total + ' ' + x.currency + '</p>').join("")
+        ? o.data.map(x => '<p>' + x.id.slice(0, 8) + '\u2026 — ' + x.status + ' — ' + x.total + ' ' + x.currency + '</p>').join("")
         : "No orders yet.";
     }
     async function approve(id) {
@@ -47,5 +48,6 @@
     }
     main();
   </script>
+<script src="./nav.js" defer></script>
 </body>
 </html>

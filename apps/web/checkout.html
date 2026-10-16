@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Checkout — LoveGiftCake</title>
   <link rel="stylesheet" href="./tokens.css" />
+  <link rel="stylesheet" href="./responsive.css" />
   <style>
     body { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); margin: 0; }
     .wrap { max-width: 720px; margin: 0 auto; padding: var(--space-4); }
@@ -24,8 +25,8 @@
     <div class="card">
       <label>Cake
         <select id="cake">
-          <option value="18000|NGN|Chocolate Birthday Cake">Chocolate Birthday Cake — NGN 18,000</option>
-          <option value="22000|NGN|Vanilla Anniversary Cake">Vanilla Anniversary Cake — NGN 22,000</option>
+          <option value="18000|NGN|Chocolate Birthday Cake">Chocolate Birthday Cake — \u20A618,000</option>
+          <option value="22000|NGN|Vanilla Anniversary Cake">Vanilla Anniversary Cake — \u20A622,000</option>
         </select>
       </label>
       <label>Quantity <input id="qty" type="number" min="1" value="1" /></label>
@@ -38,21 +39,23 @@
       </label>
       <label>Recipient name <input id="rname" placeholder="e.g. Ada in Jos" /></label>
       <label>Recipient address <input id="raddr" placeholder="Street, area, Jos" /></label>
-      <label>Recipient phone <input id="rphone" placeholder="+234…" /></label>
+      <label>Recipient phone <input id="rphone" placeholder="+234\u2026" /></label>
+      <label>Your email (order updates) <input id="cemail" type="email" placeholder="you@example.com" /></label>
       <label>Gift message <textarea id="gift" rows="2" placeholder="Happy birthday!"></textarea></label>
       <label><input id="hide" type="checkbox" style="width:auto" /> Keep my identity hidden (surprise)</label>
       <label>Delivery date <input id="date" type="date" /></label>
     </div>
     <div class="card">
-      <div class="row"><span>Subtotal</span><span id="sub">…</span></div>
-      <div class="row"><span>Delivery fee</span><span id="del">…</span></div>
-      <div class="row"><span>Platform fee</span><span id="fee">…</span></div>
-      <div class="row total"><span>Total</span><span id="tot">…</span></div>
+      <div class="row"><span>Subtotal</span><span id="sub">\u20A618,000</span></div>
+      <div class="row"><span>Delivery fee</span><span id="del">\u20A62,000</span></div>
+      <div class="row"><span>Platform fee</span><span id="fee">\u20A6900</span></div>
+      <div class="row total"><span>Total</span><span id="tot">\u20A620,900</span></div>
       <p class="muted" id="status">Demo total — connect config.js + Supabase to place real orders.</p>
       <button class="btn" onclick="placeOrder()">Pay (test mode)</button>
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://js.paystack.co/v1/inline.js"></script>
   <script src="./config.js" onerror="console.log('demo mode')"></script>
   <script>
     const fmt = (n, c) => { try { return new Intl.NumberFormat(undefined, { style: "currency", currency: c }).format(n); } catch { return n + " " + c; } };
@@ -78,12 +81,13 @@
       document.getElementById("status").textContent = "Placing test order…";
       try {
         const db = supabase.createClient(url, key);
-        const res = await db.from("vendors").select("id").eq("verification_status", "approved").limit(1).single();
-        if (!res.data) throw new Error("No approved vendor yet — add one in Supabase first.");
+        const vres = await db.from("vendors").select("id").eq("verification_status", "approved").limit(1).single();
+        if (!vres.data) throw new Error("No approved vendor yet — add one in Supabase first.");
         const ins = await db.from("orders").insert({
-          vendor_id: res.data.id, order_type: "standard", status: "placed",
+          vendor_id: vres.data.id, order_type: "standard", status: "placed",
           subtotal: t.sub, delivery_fee: t.del, platform_fee: t.fee, total: t.total,
-          currency: t.curr, scheduled_date: document.getElementById("date").value || null
+          currency: t.curr, scheduled_date: document.getElementById("date").value || null,
+          customer_email: document.getElementById("cemail").value || null
         }).select("id").single();
         if (ins.error) throw ins.error;
         await db.from("recipients").insert({
@@ -92,9 +96,37 @@
           gift_message: document.getElementById("gift").value || "", hide_sender: document.getElementById("hide").checked
         });
         await db.from("payments").insert({ order_id: ins.data.id, provider: "paystack_test", amount: t.total, currency: t.curr, status: "pending" });
-        document.getElementById("status").textContent = "Test order placed: " + ins.data.id + " (payment pending — wire Paystack test next).";
+        payWithPaystack(ins.data.id, t);
       } catch (e) { document.getElementById("status").textContent = "Failed: " + e.message; }
     }
+    function payWithPaystack(orderId, t) {
+      const key = window.PAYSTACK_PUBLIC_KEY;
+      if (!key || !window.PaystackPop) {
+        document.getElementById("status").textContent = "Test order placed: " + orderId + " (payment pending).";
+        return;
+      }
+      const handler = window.PaystackPop.setup({
+        key, email: document.getElementById("cemail").value || "customer@example.com",
+        amount: Math.round(t.total * 100), currency: t.curr === "NGN" ? "NGN" : "GHS",
+        ref: "lgc-" + orderId.slice(0, 8) + "-" + Date.now(),
+        onClose: () => { document.getElementById("status").textContent = "Test order placed: " + orderId + " (payment window closed — still pending)."; },
+        callback: async (res) => {
+          document.getElementById("status").textContent = "Payment received, verifying…";
+          if (!window.VERIFY_URL) {
+            document.getElementById("status").textContent = "Test order placed: " + orderId + " (paid on Paystack, auto-verify not deployed yet).";
+            return;
+          }
+          try {
+            const r = await fetch(window.VERIFY_URL + "?reference=" + res.reference + "&order_id=" + orderId).then(x => x.json());
+            document.getElementById("status").textContent = r.ok
+              ? "Paid! Order " + orderId + " sent to the baker."
+              : "Paid on Paystack but verify failed — contact support with ref " + res.reference;
+          } catch (e) { document.getElementById("status").textContent = "Paid on Paystack, verify error: " + e.message; }
+        }
+      });
+      handler.openIframe();
+    }
   </script>
+<script src="./nav.js" defer></script>
 </body>
 </html>
