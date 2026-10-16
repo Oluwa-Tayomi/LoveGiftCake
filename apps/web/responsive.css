@@ -1,0 +1,20 @@
+/* LoveGiftCake responsive layer — free plain CSS. Loaded after tokens.css */
+.site-nav { position: sticky; top: 0; z-index: 50; background: var(--color-surface); box-shadow: var(--shadow-card); }
+.site-nav .inner { max-width: 960px; margin: 0 auto; padding: 10px var(--space-4); display: flex; align-items: center; gap: var(--space-2); }
+.site-nav .brand { font-weight: 800; color: var(--color-primary); text-decoration: none; font-size: var(--text-lg); margin-right: auto; }
+.site-nav .links { display: flex; gap: 2px; flex-wrap: wrap; align-items: center; }
+.site-nav a.navlink { text-decoration: none; color: var(--color-text); font-size: var(--text-sm); padding: 8px 10px; border-radius: var(--radius-sm); }
+.site-nav a.navlink:hover { background: #fbeef1; }
+.site-nav .who { font-size: var(--text-xs); color: var(--color-muted); }
+.site-nav .burger { display: none; border: 1px solid #e5d9cf; background: var(--color-surface); border-radius: var(--radius-sm); padding: 8px 10px; font-size: var(--text-base); }
+@media (max-width: 640px) {
+  .site-nav .burger { display: block; }
+  .site-nav .links { display: none; width: 100%; flex-direction: column; align-items: stretch; padding-bottom: 8px; }
+  .site-nav.open .links { display: flex; }
+  .site-nav a.navlink { padding: 12px 10px; font-size: var(--text-base); }
+  .wrap { padding: var(--space-3); }
+  .btn { padding: 14px 18px; }
+}
+@media (min-width: 961px) { .wrap { max-width: 960px; } }
+img { max-width: 100%; height: auto; }
+:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
