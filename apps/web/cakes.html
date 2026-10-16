@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Cakes — LoveGiftCake</title>
   <link rel="stylesheet" href="./tokens.css" />
+  <link rel="stylesheet" href="./responsive.css" />
   <style>
     body { font-family: var(--font-sans); background: var(--color-bg); color: var(--color-text); margin: 0; }
     .wrap { max-width: 720px; margin: 0 auto; padding: var(--space-4); }
@@ -16,7 +17,7 @@
 <body>
   <div class="wrap">
     <h1>Cakes</h1>
-    <p class="muted" id="status">Loading…</p>
+    <p class="muted" id="status">Loading\u2026</p>
     <div id="list"></div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -46,10 +47,11 @@
     function render(rows) {
       const fmt = (n, c) => { try { return new Intl.NumberFormat(undefined, { style: "currency", currency: c || "NGN" }).format(n); } catch { return n + " " + (c || ""); } };
       document.getElementById("list").innerHTML = rows.map(p =>
-        '<div class="card"><strong>' + p.name + '</strong><p><span class="price">' + fmt(p.base_price, p.currency) + '</span> <span class="muted">• ready in ' + p.prep_hours + 'h</span></p></div>'
+        '<div class="card"><strong>' + p.name + '</strong><p><span class="price">' + fmt(p.base_price, p.currency) + '</span> <span class="muted">\u2022 ready in ' + p.prep_hours + 'h</span></p></div>'
       ).join("");
     }
     main();
   </script>
+<script src="./nav.js" defer></script>
 </body>
 </html>
