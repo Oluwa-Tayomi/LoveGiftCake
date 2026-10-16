@@ -56,6 +56,7 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://js.paystack.co/v1/inline.js"></script>
+  <script src="./site.js"></script>
   <script src="./config.js" onerror="console.log('demo mode')"></script>
   <script>
     const fmt = (n, c) => { try { return new Intl.NumberFormat(undefined, { style: "currency", currency: c }).format(n); } catch { return n + " " + c; } };
@@ -81,10 +82,16 @@
       document.getElementById("status").textContent = "Placing test order…";
       try {
         const db = supabase.createClient(url, key);
+        const sess = await db.auth.getSession();
+        if (!sess.data.session) {
+          document.getElementById("status").innerHTML = 'Please <a href="./auth.html">sign in</a> first — orders save under your account.';
+          return;
+        }
+        const customerId = sess.data.session.user.id;
         const vres = await db.from("vendors").select("id").eq("verification_status", "approved").limit(1).single();
         if (!vres.data) throw new Error("No approved vendor yet — add one in Supabase first.");
         const ins = await db.from("orders").insert({
-          vendor_id: vres.data.id, order_type: "standard", status: "placed",
+          customer_id: customerId, vendor_id: vres.data.id, order_type: "standard", status: "placed",
           subtotal: t.sub, delivery_fee: t.del, platform_fee: t.fee, total: t.total,
           currency: t.curr, scheduled_date: document.getElementById("date").value || null,
           customer_email: document.getElementById("cemail").value || null

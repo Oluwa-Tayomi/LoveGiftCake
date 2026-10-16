@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sign in — LoveGiftCake</title>
+  <title>Sign in \u2014 LoveGiftCake</title>
   <link rel="stylesheet" href="./tokens.css" />
   <link rel="stylesheet" href="./responsive.css" />
   <style>
@@ -31,7 +31,7 @@
       </div>
       <div id="upFields">
         <label>Your name <input id="name" placeholder="e.g. Ada" /></label>
-        <label>I am a…</label>
+        <label>I am a\u2026</label>
         <div class="roles">
           <label><input type="radio" name="role" value="customer" checked style="width:auto" /> Customer</label>
           <label><input type="radio" name="role" value="vendor" style="width:auto" /> Vendor</label>
@@ -44,6 +44,7 @@
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./site.js"></script>
   <script src="./config.js" onerror="console.log('demo')"></script>
   <script src="./auth.js"></script>
   <script src="./nav.js" defer></script>
@@ -63,7 +64,7 @@
     async function go() {
       const out = document.getElementById("out");
       if (needKeys()) { out.textContent = "Demo — add config.js first (see supabase/SETUP_FREE.md)."; return; }
-      out.textContent = "Working…";
+      out.textContent = "Working\u2026";
       const email = document.getElementById("email").value.trim();
       const pw = document.getElementById("pw").value;
       try {
